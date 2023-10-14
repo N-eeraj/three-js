@@ -11,38 +11,58 @@ document.body.appendChild(renderer.domElement)
 
 const control = new OrbitControls(camera, renderer.domElement)
 
-const light = new THREE.HemisphereLight(0x333333, 0x000000, 250)
+const light = new THREE.HemisphereLight(0x000000, 0x272727, 250)
 light.position.set(25, 50, 5)
 scene.add(light)
 const lightHelper = new THREE.HemisphereLightHelper(light, 3);
 scene.add(lightHelper)
 
+const mesh = new THREE.MeshStandardMaterial({ color: 0x00aaff })
 
-const addBar = (value, index) => {
-  const width = 2
-  const height = value * 0.1 || 0.001
-  let color
-  if (value < 40)
-    color = 0x88ddff
-  else if (value < 70)
-    color = 0x44bbff
-  else
-    color = 0x00aaff
-  const geometry = new THREE.BoxGeometry(width, height, width)
-  const mesh = new THREE.MeshStandardMaterial({ color })
-  const x = new THREE.Mesh(geometry, mesh)
-  x.position.x += (width + 1) * index - 10
-  x.position.y = height / 2
-  scene.add(x)
+class GenerateBar {
+  constructor(index) {
+    this.index = index
+    const width = 2
+    this.value = data[index]
+    const height = this.value * 0.1 || 0.001
+    const geometry = new THREE.BoxGeometry(width, height, width)
+    this.bar = new THREE.Mesh(geometry, mesh)
+    this.bar.position.x += (width + 1) * index - 14
+    this.bar.position.y = height / 2 - 10
+    scene.add(this.bar)
+  }
+
+  update() {
+    scene.remove(this.bar)
+    const width = 2
+    if (this.value < data[this.index]) {
+      ++this.value
+      if (this.value > data[this.index])
+        this.value = data[this.index]
+    }
+    else if (this.value > data[this.index]) {
+      --this.value
+      if (this.value < data[this.index])
+        this.value = data[this.index]
+    }
+    const height = this.value * 0.1 || 0.001
+    const geometry = new THREE.BoxGeometry(width, height, width)
+    this.bar = new THREE.Mesh(geometry, mesh)
+    this.bar.position.x += (width + 1) * this.index - 14
+    this.bar.position.y = height / 2 - 10
+    scene.add(this.bar)
+  }
 }
 
-Array.from({ length: 10 })
-  .map(() => Math.round(Math.random() * 100))
-  .forEach((value, index) => addBar(value, index))
 
+const generateData = () => Array.from({ length: 10 }).map(() => Math.floor(Math.random() * 100))
+let data = generateData()
+setInterval(() => data = generateData(), 3000)
+const bars = data.map((_, index) => new GenerateBar(index))
 
 const animate = () => {
   control.update()
+  bars.forEach(bar => bar.update())
   renderer.render(scene, camera)
   requestAnimationFrame(animate)
 }
